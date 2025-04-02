@@ -1,0 +1,559 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import Navbar from './Navbar';
+import { Link } from 'react-router-dom';
+import { db } from '../config';
+import { collection, getDocs, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import './EventDashboard.css';
+import '../index.css';
+
+
+const RegistrationForm = ({ event, onClose, onSubmit }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    rollNo: '',
+    department: '',
+    year: ''
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <div className="registration-modal">
+      <div className="registration-content">
+        <h3>Register for {event.title}</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Name</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Roll Number</label>
+            <input
+              type="text"
+              value={formData.rollNo}
+              onChange={(e) => setFormData({...formData, rollNo: e.target.value})}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Department</label>
+            <select
+              value={formData.department}
+              onChange={(e) => setFormData({...formData, department: e.target.value})}
+              required
+            >
+              <option value="">Select Department</option>
+              <option value="CSE">CSE</option>
+              <option value="IT">IT</option>
+              <option value="ECE">ECE</option>
+              <option value="EEE">EEE</option>
+              <option value="MECH">MECH</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Year</label>
+            <select
+              value={formData.year}
+              onChange={(e) => setFormData({...formData, year: e.target.value})}
+              required
+            >
+              <option value="">Select Year</option>
+              <option value="1">1st Year</option>
+              <option value="2">2nd Year</option>
+              <option value="3">3rd Year</option>
+              <option value="4">4th Year</option>
+            </select>
+          </div>
+          <div className="form-actions">
+            <button type="submit" className="submit-btn">Submit</button>
+            <button type="button" className="cancel-btn" onClick={onClose}>Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+const Dashboard = () => {
+  const navigate = useNavigate();
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [events, setEvents] = useState([]);
+  const [highlights, setHighlights] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+
+  const categories = [
+    { id: 'all', name: 'All Events', icon: 'fa-calendar-alt' },
+    { id: 'academic', name: 'Academic', icon: 'fa-graduation-cap' },
+    { id: 'cultural', name: 'Cultural', icon: 'fa-theater-masks' },
+    { id: 'technical', name: 'Technical', icon: 'fa-laptop-code' },
+    { id: 'sports', name: 'Sports', icon: 'fa-basketball-ball' },
+    { id: 'workshops', name: 'Workshops', icon: 'fa-chalkboard-teacher' }
+  ];
+
+  const statusFilters = [
+    { id: 'all', name: 'All', icon: 'fa-list' },
+    { id: 'upcoming', name: 'Upcoming', icon: 'fa-clock' },
+    { id: 'live', name: 'Live', icon: 'fa-broadcast-tower' },
+    { id: 'ended', name: 'Ended', icon: 'fa-check-circle' }
+  ];
+
+  const featuredEvents = [
+    {
+      id: 1,
+      title: "Tech Innovation Summit 2024",
+      date: "Mar 15",
+      time: "10:00 AM",
+      venue: "Main Auditorium",
+      category: "Technical",
+      image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
+      attendees: 234,
+      isLive: true
+    },
+    {
+      id: 2,
+      title: "Cultural Night Fest",
+      date: "Mar 20",
+      time: "6:00 PM",
+      venue: "Open Air Theatre",
+      category: "Cultural",
+      image: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800",
+      attendees: 456,
+      isLive: false
+    },
+    {
+      id: 3,
+      title: "Sports Tournament Finals",
+      date: "Mar 25",
+      time: "2:00 PM",
+      venue: "Sports Complex",
+      category: "Sports",
+      image: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800",
+      attendees: 189,
+      isLive: false
+    }
+  ];
+
+  const quickStats = [
+    { label: 'Total Events', value: '120+', icon: 'fa-calendar-check', color: '#7C4DFF' },
+    { label: 'Active Users', value: '1.2K', icon: 'fa-users', color: '#FF4081' },
+    { label: 'Live Now', value: '8', icon: 'fa-broadcast-tower', color: '#00BFA5' },
+    { label: 'This Month', value: '45', icon: 'fa-chart-line', color: '#FFA726' }
+  ];
+
+  // Updated getEventStatus function
+  const getEventStatus = (event) => {
+    const now = new Date().getTime();
+    const eventDate = new Date(`${event.date} ${event.startTime}`).getTime();
+    const eventEndDate = new Date(`${event.date} ${event.endTime}`).getTime();
+
+    if (now > eventEndDate) {
+      return 'ended';
+    } else if (now >= eventDate && now <= eventEndDate) {
+      return 'live';
+    } else {
+      return 'upcoming';
+    }
+  };
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const eventsRef = collection(db, 'events');
+        const q = query(eventsRef, orderBy('date', 'asc'));
+        const querySnapshot = await getDocs(q);
+        
+        const eventsData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          status: getEventStatus(doc.data())
+        }));
+        
+        setEvents(eventsData);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        setError('Failed to load events');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  const handleHighlightUpload = (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const newHighlight = {
+          id: Date.now(),
+          image: reader.result,
+          uploadedAt: new Date().toISOString()
+        };
+        
+        setHighlights(prevHighlights => {
+          const updatedHighlights = [...prevHighlights, newHighlight];
+          localStorage.setItem('eventHighlights', JSON.stringify(updatedHighlights));
+          return updatedHighlights;
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Filter events
+  const filteredEvents = events.filter(event => {
+    const categoryMatch = selectedCategory === 'all' || event.category === selectedCategory;
+    const statusMatch = selectedStatus === 'all' || event.status === selectedStatus;
+    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         event.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return categoryMatch && statusMatch && matchesSearch;
+  });
+
+  // Format date function
+  const formatDate = (dateString) => {
+    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+    return new Date(dateString).toLocaleDateString('en-US', options);
+  };
+
+  // Format time function
+  const formatTime = (time) => {
+    return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  // Calculate time remaining
+  const getTimeRemaining = (deadline) => {
+    const now = new Date().getTime();
+    const timeLeft = new Date(deadline).getTime() - now;
+    
+    if (timeLeft <= 0) return 'Deadline passed';
+    
+    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (days > 0) return `${days} days left`;
+    if (hours > 0) return `${hours} hours left`;
+    return 'Less than an hour left';
+  };
+
+  const handleRegister = async (eventId, participantData) => {
+    try {
+      const eventRef = doc(db, 'events', eventId);
+      const event = events.find(e => e.id === eventId);
+      
+      if (!event) return;
+
+      // Check if capacity is reached
+      if (event.participants?.length >= event.capacity) {
+        alert('Sorry, this event has reached its maximum capacity.');
+        return;
+      }
+
+      // Check if participant already registered
+      if (event.participants?.some(p => p.rollNo === participantData.rollNo)) {
+        alert('You have already registered for this event.');
+        return;
+      }
+
+      // Add participant to event
+      const updatedParticipants = [...(event.participants || []), {
+        ...participantData,
+        registeredAt: new Date().toISOString()
+      }];
+
+      await updateDoc(eventRef, {
+        participants: updatedParticipants
+      });
+
+      // Update local state
+      setEvents(events.map(e => 
+        e.id === eventId 
+          ? {...e, participants: updatedParticipants}
+          : e
+      ));
+
+      setShowRegistrationForm(false);
+      alert('Registration successful!');
+    } catch (error) {
+      console.error('Error registering:', error);
+      alert('Failed to register. Please try again.');
+    }
+  };
+
+  const isDeadlinePassed = (deadline) => {
+    return new Date(deadline) < new Date();
+  };
+
+  return (
+    <div className="dashboard-wrapper">
+      <Navbar />
+      <div className="dashboard-container">
+        <div className="hero-section">
+          <div className="hero-content">
+            <h1>Discover Amazing College Events</h1>
+            <p>Find and create events that matter to you</p>
+          </div>
+
+          <div className="quick-stats">
+            <div className="stat-card">
+              <i className="fas fa-calendar stat-icon"></i>
+              <div className="stat-info">
+                <h3>{events.length}</h3>
+                <p>Total Events</p>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <i className="fas fa-users stat-icon"></i>
+              <div className="stat-info">
+                <h3>{events.filter(e => e.status === 'upcoming').length}</h3>
+                <p>Upcoming Events</p>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <i className="fas fa-play-circle stat-icon"></i>
+              <div className="stat-info">
+                <h3>{events.filter(e => e.status === 'live').length}</h3>
+                <p>Live Now</p>
+              </div>
+            </div>
+
+            <div className="stat-card">
+              <i className="fas fa-chart-line stat-icon"></i>
+              <div className="stat-info">
+                <h3>{events.filter(e => {
+                  const eventDate = new Date(e.date);
+                  const thisMonth = new Date().getMonth();
+                  return eventDate.getMonth() === thisMonth;
+                }).length}</h3>
+                <p>This Month</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Top Navigation Actions */}
+        <div className="dashboard-actions">
+         
+        </div>
+
+        {/* Search and Filter Section */}
+        <section className="search-filter-section">
+          <div className="search-bar">
+            <i className="fas fa-search"></i>
+            <input
+              type="text"
+              placeholder="Search events..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="filters-container">
+            <div className="filter-group">
+              <h3>Categories</h3>
+              <div className="filter-buttons">
+                {categories.map(category => (
+                  <motion.button
+                    key={category.id}
+                    className={`filter-btn ${selectedCategory === category.id ? 'active' : ''}`}
+                    onClick={() => setSelectedCategory(category.id)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <i className={`fas ${category.icon}`}></i>
+                    {category.name}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            <div className="filter-group">
+              <h3>Status</h3>
+              <div className="filter-buttons">
+                {statusFilters.map(status => (
+                  <motion.button
+                    key={status.id}
+                    className={`filter-btn ${selectedStatus === status.id ? 'active' : ''}`}
+                    onClick={() => setSelectedStatus(status.id)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <i className={`fas ${status.icon}`}></i>
+                    {status.name}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Events Grid */}
+        <section className="events-section">
+          {loading ? (
+            <div className="loading-state">
+              <i className="fas fa-spinner fa-spin"></i>
+              <p>Loading events...</p>
+            </div>
+          ) : error ? (
+            <div className="error-state">
+              <i className="fas fa-exclamation-circle"></i>
+              <p>{error}</p>
+            </div>
+          ) : (
+            <div className="events-grid">
+              {filteredEvents.length > 0 ? (
+                filteredEvents.map((event, index) => (
+                  <motion.div
+                    key={event.id}
+                    className={`event-card ${event.status}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: index * 0.1 }}
+                    whileHover={{ y: -5 }}
+                  >
+                    <div className="event-image">
+                      <img 
+                        src={event.imageUrl || '/default-event-image.jpg'} 
+                        alt={event.title}
+                        onError={(e) => {
+                          e.target.src = '/default-event-image.jpg';
+                        }}
+                      />
+                      <div className={`status-badge ${event.status}`}>
+                        {event.status === 'live' && <div className="pulse"></div>}
+                        {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                      </div>
+                    </div>
+                    <div className="event-content">
+                      <div className="event-header">
+                        <h3>{event.title}</h3>
+                        <span className={`category-tag ${event.category}`}>
+                          {event.category}
+                        </span>
+                      </div>
+                      <div className="event-details">
+                        <div className="detail">
+                          <i className="fas fa-calendar-alt"></i>
+                          <div className="detail-text">
+                            <small>Date</small>
+                            <span>{formatDate(event.date)}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="detail">
+                          <i className="fas fa-clock"></i>
+                          <div className="detail-text">
+                            <small>Time</small>
+                            <span>
+                              {formatTime(event.startTime)} - {formatTime(event.endTime)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="detail">
+                          <i className="fas fa-map-marker-alt"></i>
+                          <div className="detail-text">
+                            <small>Venue</small>
+                            <span>{event.venue}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="duration-badge">
+                        <i className="fas fa-hourglass-half"></i>
+                        <span>
+                          {(() => {
+                            const start = new Date(`2000-01-01T${event.startTime}`);
+                            const end = new Date(`2000-01-01T${event.endTime}`);
+                            const diff = (end - start) / (1000 * 60); // minutes
+                            const hours = Math.floor(diff / 60);
+                            const minutes = diff % 60;
+                            return `${hours}h ${minutes}m duration`;
+                          })()}
+                        </span>
+                      </div>
+                      <div className="deadline-info">
+                        <i className="fas fa-hourglass-half"></i>
+                        <div className="deadline-text">
+                          <small>Registration Deadline</small>
+                          <span>{getTimeRemaining(event.registrationDeadline)}</span>
+                        </div>
+                      </div>
+                      <div className="event-footer">
+                        <div className="participants-info">
+                          <div className="participant-count">
+                            <i className="fas fa-users"></i>
+                            <span>{event.participants?.length || 0} registered</span>
+                          </div>
+                          <small>
+                            {event.capacity - (event.participants?.length || 0)} spots left
+                          </small>
+                        </div>
+
+                        {event.status !== 'ended' && !isDeadlinePassed(event.registrationDeadline) && (
+                          <button 
+                            className="register-btn"
+                            onClick={() => {
+                              setSelectedEvent(event);
+                              setShowRegistrationForm(true);
+                            }}
+                            disabled={
+                              (event.participants?.length || 0) >= event.capacity
+                            }
+                          >
+                            {(event.participants?.length || 0) >= event.capacity 
+                              ? 'Full' 
+                              : 'Register'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="no-events">
+                  <i className="fas fa-calendar-times"></i>
+                  <p>No events found</p>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      </div>
+
+      {showRegistrationForm && selectedEvent && (
+        <RegistrationForm
+          event={selectedEvent}
+          onClose={() => {
+            setShowRegistrationForm(false);
+            setSelectedEvent(null);
+          }}
+          onSubmit={(formData) => handleRegister(selectedEvent.id, formData)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default Dashboard; 
