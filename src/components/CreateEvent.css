@@ -20,10 +20,11 @@
 }
 
 .create-event-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
   position: relative;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .input-group {
@@ -96,24 +97,80 @@
   margin-bottom: 1.5rem;
 }
 
-/* Submit button */
-.submit-btn {
-  background: #7c3aed;
-  color: white;
+.form-footer {
+  margin-top: 2rem;
+}
+
+.error-container {
+  background-color: #FEE2E2;
+  border-left: 4px solid #DC2626;
+  border-radius: 8px;
+  margin-bottom: 1rem;
   padding: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  animation: slideUp 0.3s ease;
+}
+
+.error-icon {
+  color: #DC2626;
+  font-size: 1.25rem;
+  padding-top: 0.25rem;
+}
+
+.error-content {
+  flex: 1;
+}
+
+.error-content h4 {
+  color: #991B1B;
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.error-content p {
+  color: #7F1D1D;
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.error-content p:first-of-type {
+  margin-top: 0;
+}
+
+.error-content p:last-of-type {
+  margin-bottom: 0;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #8B5CF6;
+  color: white;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 1rem;
+  transition: background-color 0.3s ease;
 }
 
 .submit-btn:hover {
-  background: #6d28d9;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+  background-color: #7C3AED;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 768px) {
@@ -121,15 +178,4 @@
   .capacity-deadline-container {
     grid-template-columns: 1fr;
   }
-}
-
-/* Add to CreateEvent.css */
-.error-message {
-  color: #dc2626;
-  background-color: #fee2e2;
-  border: 1px solid #fecaca;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
 }

@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../config';
-import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs } from 'firebase/firestore';
 import './CreateEvent.css';
 
 const CreateEvent = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
   const [existingEvents, setExistingEvents] = useState([]);
   const [formData, setFormData] = useState({
     title: '',
@@ -23,6 +22,15 @@ const CreateEvent = () => {
     imageUrl: ''
   });
   const [error, setError] = useState('');
+
+  // Add formatTime function here
+  const formatTime = (timeStr) => {
+    const [hours, minutes] = timeStr.split(':');
+    const hour = parseInt(hours);
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${period}`;
+  };
 
   // Fetch existing events when component mounts
   useEffect(() => {
@@ -43,46 +51,30 @@ const CreateEvent = () => {
     fetchEvents();
   }, []);
 
-  const handleNext = () => {
-    setStep(step + 1);
-  };
-
-  const handlePrevious = () => {
-    setStep(step - 1);
-  };
-
-  // Check for time and venue conflicts
-  const checkConflicts = () => {
-    // Normalize the venue names by removing spaces and making lowercase
-    const normalizeVenue = (venue) => venue.toLowerCase().replace(/\s+/g, '').trim();
-    const newVenue = normalizeVenue(formData.venue);
-    const newDate = formData.date;
-    
-    // Convert times to minutes for easier comparison
-    const timeToMinutes = (time) => {
-      const [hours, minutes] = time.split(':').map(Number);
+  const checkTimeConflict = () => {
+    const getMinutes = (timeStr) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
       return hours * 60 + minutes;
     };
 
-    const newStartMinutes = timeToMinutes(formData.startTime);
-    const newEndMinutes = timeToMinutes(formData.endTime);
+    const newStartMinutes = getMinutes(formData.startTime);
+    const newEndMinutes = getMinutes(formData.endTime);
+    const newVenue = formData.venue.toLowerCase().trim();
+    const newDate = formData.date;
 
     const conflicts = existingEvents.filter(event => {
-      // Check if same date and venue first
-      if (event.date === newDate && normalizeVenue(event.venue) === newVenue) {
-        const existingStartMinutes = timeToMinutes(event.startTime);
-        const existingEndMinutes = timeToMinutes(event.endTime);
-
-        // Check for any overlap in time ranges
-        const hasOverlap = (
-          (newStartMinutes >= existingStartMinutes && newStartMinutes < existingEndMinutes) || // New event starts during existing event
-          (newEndMinutes > existingStartMinutes && newEndMinutes <= existingEndMinutes) || // New event ends during existing event
-          (newStartMinutes <= existingStartMinutes && newEndMinutes >= existingEndMinutes) // New event completely encompasses existing event
-        );
-
-        return hasOverlap;
+      if (event.date !== newDate || event.venue.toLowerCase().trim() !== newVenue) {
+        return false;
       }
-      return false;
+
+      const existingStart = getMinutes(event.startTime);
+      const existingEnd = getMinutes(event.endTime);
+
+      return (
+        (newStartMinutes >= existingStart && newStartMinutes < existingEnd) ||
+        (newEndMinutes > existingStart && newEndMinutes <= existingEnd) ||
+        (newStartMinutes <= existingStart && newEndMinutes >= existingEnd)
+      );
     });
 
     return conflicts;
@@ -92,21 +84,33 @@ const CreateEvent = () => {
     e.preventDefault();
     setError('');
 
-    // Validate end time is after start time
-    const startMinutes = timeToMinutes(formData.startTime);
-    const endMinutes = timeToMinutes(formData.endTime);
+    // Basic validation
+    if (!formData.title || !formData.date || !formData.startTime || 
+        !formData.endTime || !formData.venue || !formData.capacity) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    // Check if end time is after start time
+    const startTime = new Date(`2000-01-01T${formData.startTime}`);
+    const endTime = new Date(`2000-01-01T${formData.endTime}`);
     
-    if (endMinutes <= startMinutes) {
+    if (endTime <= startTime) {
       setError('End time must be after start time');
       return;
     }
 
-    // Check for conflicts
-    const conflicts = checkConflicts();
+    // Check for venue and time conflicts
+    const conflicts = checkTimeConflict();
     if (conflicts.length > 0) {
-      const conflict = conflicts[0];
+      const conflictMessages = conflicts.map(conflict => 
+        `• "${conflict.title}" (${formatTime(conflict.startTime)} - ${formatTime(conflict.endTime)})`
+      ).join('\n');
+
       setError(
-        `Cannot create event: Venue "${formData.venue}" is already booked on ${formData.date} from ${conflict.startTime} to ${conflict.endTime} for event "${conflict.title}". Please choose a different time or venue.`
+        `Cannot create event due to scheduling conflicts at ${formData.venue} on ${formData.date}:\n\n` +
+        `${conflictMessages}\n\n` +
+        `Please choose a different time or venue.`
       );
       return;
     }
@@ -129,20 +133,13 @@ const CreateEvent = () => {
     }
   };
 
-  // Helper function to convert time to minutes
-  const timeToMinutes = (time) => {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
-  };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    // Clear error when user makes changes
-    setError('');
+    setError(''); // Clear error when user makes changes
   };
 
   return (
@@ -287,9 +284,25 @@ const CreateEvent = () => {
           />
         </div>
 
-        <button type="submit" className="submit-btn">
-          Create Event
-        </button>
+        <div className="form-footer">
+          {error && (
+            <div className="error-container">
+              <div className="error-icon">
+                <i className="fas fa-exclamation-circle"></i>
+              </div>
+              <div className="error-content">
+                <h4>Error</h4>
+                {error.split('\n').map((line, index) => (
+                  <p key={index}>{line}</p>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <button type="submit" className="submit-btn">
+            Create Event
+          </button>
+        </div>
       </form>
     </div>
   );
