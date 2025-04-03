@@ -23,6 +23,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  position: relative;
 }
 
 .input-group {
@@ -120,4 +121,15 @@
   .capacity-deadline-container {
     grid-template-columns: 1fr;
   }
+}
+
+/* Add to CreateEvent.css */
+.error-message {
+  color: #dc2626;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
 }

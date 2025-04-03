@@ -53,25 +53,36 @@ const CreateEvent = () => {
 
   // Check for time and venue conflicts
   const checkConflicts = () => {
-    const newEventStart = new Date(`${formData.date}T${formData.startTime}`);
-    const newEventEnd = new Date(`${formData.date}T${formData.endTime}`);
+    // Normalize the venue names by removing spaces and making lowercase
+    const normalizeVenue = (venue) => venue.toLowerCase().replace(/\s+/g, '').trim();
+    const newVenue = normalizeVenue(formData.venue);
+    const newDate = formData.date;
+    
+    // Convert times to minutes for easier comparison
+    const timeToMinutes = (time) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    const newStartMinutes = timeToMinutes(formData.startTime);
+    const newEndMinutes = timeToMinutes(formData.endTime);
 
     const conflicts = existingEvents.filter(event => {
-      const existingStart = new Date(`${event.date}T${event.startTime}`);
-      const existingEnd = new Date(`${event.date}T${event.endTime}`);
+      // Check if same date and venue first
+      if (event.date === newDate && normalizeVenue(event.venue) === newVenue) {
+        const existingStartMinutes = timeToMinutes(event.startTime);
+        const existingEndMinutes = timeToMinutes(event.endTime);
 
-      // Check if dates are the same
-      if (event.date !== formData.date) return false;
+        // Check for any overlap in time ranges
+        const hasOverlap = (
+          (newStartMinutes >= existingStartMinutes && newStartMinutes < existingEndMinutes) || // New event starts during existing event
+          (newEndMinutes > existingStartMinutes && newEndMinutes <= existingEndMinutes) || // New event ends during existing event
+          (newStartMinutes <= existingStartMinutes && newEndMinutes >= existingEndMinutes) // New event completely encompasses existing event
+        );
 
-      // Check if venues are the same
-      if (event.venue.toLowerCase() !== formData.venue.toLowerCase()) return false;
-
-      // Check for time overlap
-      return (
-        (newEventStart >= existingStart && newEventStart < existingEnd) ||
-        (newEventEnd > existingStart && newEventEnd <= existingEnd) ||
-        (newEventStart <= existingStart && newEventEnd >= existingEnd)
-      );
+        return hasOverlap;
+      }
+      return false;
     });
 
     return conflicts;
@@ -82,10 +93,10 @@ const CreateEvent = () => {
     setError('');
 
     // Validate end time is after start time
-    const startTime = new Date(`2000-01-01T${formData.startTime}`);
-    const endTime = new Date(`2000-01-01T${formData.endTime}`);
+    const startMinutes = timeToMinutes(formData.startTime);
+    const endMinutes = timeToMinutes(formData.endTime);
     
-    if (endTime <= startTime) {
+    if (endMinutes <= startMinutes) {
       setError('End time must be after start time');
       return;
     }
@@ -93,11 +104,10 @@ const CreateEvent = () => {
     // Check for conflicts
     const conflicts = checkConflicts();
     if (conflicts.length > 0) {
-      const conflictDetails = conflicts.map(event => 
-        `"${event.title}" (${event.startTime} - ${event.endTime})`
-      ).join(', ');
-      
-      setError(`There are scheduling conflicts with the following events at this venue: ${conflictDetails}`);
+      const conflict = conflicts[0];
+      setError(
+        `Cannot create event: Venue "${formData.venue}" is already booked on ${formData.date} from ${conflict.startTime} to ${conflict.endTime} for event "${conflict.title}". Please choose a different time or venue.`
+      );
       return;
     }
 
@@ -107,18 +117,22 @@ const CreateEvent = () => {
         createdBy: auth.currentUser.uid,
         createdAt: new Date(),
         status: 'upcoming',
-        attendees: []
+        participants: []
       };
       
-      // Add event to Firebase
-      const docRef = await addDoc(collection(db, 'events'), eventData);
-      console.log('Event created with ID:', docRef.id);
-      
+      await addDoc(collection(db, 'events'), eventData);
+      alert('Event created successfully!');
       navigate('/');
     } catch (error) {
       console.error('Error creating event:', error);
       setError('Failed to create event. Please try again.');
     }
+  };
+
+  // Helper function to convert time to minutes
+  const timeToMinutes = (time) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
   };
 
   const handleChange = (e) => {

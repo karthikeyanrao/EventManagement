@@ -64,147 +64,6 @@ const Profile = () => {
     navigate('/');
   };
 
-  const renderForm = () => {
-    if (formData.role === 'faculty') {
-      return (
-        <>
-          <div className="form-field">
-            <label>Full Name</label>
-            <input
-              type="text"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-field">
-            <label>Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              disabled
-            />
-          </div>
-
-          <div className="form-field">
-            <label>Department</label>
-            <select
-              name="department"
-              value={formData.department}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select Department</option>
-              <option value="CSE">CSE</option>
-              <option value="IT">IT</option>
-              <option value="ECE">ECE</option>
-              <option value="EEE">EEE</option>
-              <option value="MECH">MECH</option>
-            </select>
-          </div>
-
-          <div className="form-field">
-            <label>Phone Number</label>
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              required
-            />
-          </div>
-        </>
-      );
-    }
-
-    return (
-      <>
-        <div className="form-field">
-          <label>Full Name</label>
-          <input
-            type="text"
-            name="fullName"
-            value={formData.fullName}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="form-field">
-          <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            disabled
-          />
-        </div>
-
-        <div className="form-field">
-          <label>Department</label>
-          <select
-            name="department"
-            value={formData.department}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select Department</option>
-            <option value="CSE">CSE</option>
-            <option value="IT">IT</option>
-            <option value="ECE">ECE</option>
-            <option value="EEE">EEE</option>
-            <option value="MECH">MECH</option>
-          </select>
-        </div>
-
-        <div className="form-field">
-          <label>Year</label>
-          <select
-            name="year"
-            value={formData.year}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select Year</option>
-            <option value="1">1st Year</option>
-            <option value="2">2nd Year</option>
-            <option value="3">3rd Year</option>
-            <option value="4">4th Year</option>
-          </select>
-        </div>
-
-        <div className="form-field">
-          <label>Roll Number</label>
-          <input
-            type="text"
-            name="rollNo"
-            value={formData.rollNo}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="form-field">
-          <label>Phone Number</label>
-          <input
-            type="tel"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            required
-          />
-        </div>
-      </>
-    );
-  };
-
   if (loading) return <div className="profile-loading">Loading...</div>;
   if (error) return <div className="profile-error">{error}</div>;
 
@@ -221,6 +80,18 @@ const Profile = () => {
 
         {isEditing ? (
           <form onSubmit={handleSubmit} className="profile-form">
+            <div className="input-group">
+              <label className="input-label">Role</label>
+              <input
+                type="text"
+                name="role"
+                value={formData.role}
+                className="input-field"
+                disabled
+                required
+              />
+            </div>
+
             <div className="input-group">
               <label className="input-label">Full Name</label>
               <input
@@ -264,6 +135,39 @@ const Profile = () => {
               </select>
             </div>
 
+            {formData.role === 'student' && (
+              <>
+                <div className="input-group">
+                  <label className="input-label">Year</label>
+                  <select
+                    name="year"
+                    value={formData.year}
+                    onChange={handleChange}
+                    className="input-field"
+                    required
+                  >
+                    <option value="">Select Year</option>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                  </select>
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label">Roll Number</label>
+                  <input
+                    type="text"
+                    name="rollNo"
+                    value={formData.rollNo}
+                    onChange={handleChange}
+                    className="input-field"
+                    required
+                  />
+                </div>
+              </>
+            )}
+
             <div className="input-group">
               <label className="input-label">Phone Number</label>
               <input
@@ -290,6 +194,10 @@ const Profile = () => {
 
             <div className="details-grid">
               <div className="detail-item">
+                <span className="detail-label">Role</span>
+                <span className="detail-value">{user?.role}</span>
+              </div>
+              <div className="detail-item">
                 <span className="detail-label">Email</span>
                 <span className="detail-value">{user?.email}</span>
               </div>
@@ -297,22 +205,22 @@ const Profile = () => {
                 <span className="detail-label">Department</span>
                 <span className="detail-value">{user?.department}</span>
               </div>
-              {user?.role === 'student' && (
-                <>
-                  <div className="detail-item">
-                    <span className="detail-label">Year</span>
-                    <span className="detail-value">{user?.year}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Roll Number</span>
-                    <span className="detail-value">{user?.rollNo}</span>
-                  </div>
-                </>
-              )}
               <div className="detail-item">
                 <span className="detail-label">Phone</span>
                 <span className="detail-value">{user?.phone}</span>
               </div>
+              {user?.role === 'student' && (
+                <>
+                  <div className="detail-item">
+                    <span className="detail-label">Roll Number</span>
+                    <span className="detail-value">{user?.rollNo}</span>
+                  </div>
+                  <div className="detail-item">
+                    <span className="detail-label">Year</span>
+                    <span className="detail-value">{user?.year}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

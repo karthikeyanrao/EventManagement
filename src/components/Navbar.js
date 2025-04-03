@@ -52,11 +52,15 @@ const Navbar = () => {
       </div>
 
       <div className="nav-right">
-        {user && userRole && userRole !== 'student' && (
-          <Link to="/create-event" className="create-event-btn">
-            <i className="fas fa-plus"></i>
-            <span>Create Event</span>
-          </Link>
+        {user && userRole && (
+          <>
+            {userRole === 'faculty' && (
+              <Link to="/create-event" className="create-event-btn">
+                <i className="fas fa-plus"></i>
+                <span>Create Event</span>
+              </Link>
+            )}
+          </>
         )}
 
         <div className="nav-auth">
