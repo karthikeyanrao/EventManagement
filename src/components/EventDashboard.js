@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from './Navbar';
@@ -116,24 +116,6 @@ const Dashboard = () => {
     { id: 'ended', name: 'Ended', icon: 'fa-check-circle' }
   ];
 
-
- 
-
-  // Updated getEventStatus function
-  const getEventStatus = (event) => {
-    const now = new Date().getTime();
-    const eventDate = new Date(`${event.date} ${event.startTime}`).getTime();
-    const eventEndDate = new Date(`${event.date} ${event.endTime}`).getTime();
-
-    if (now > eventEndDate) {
-      return 'ended';
-    } else if (now >= eventDate && now <= eventEndDate) {
-      return 'live';
-    } else {
-      return 'upcoming';
-    }
-  };
-
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -181,14 +163,104 @@ const Dashboard = () => {
     });
   };
 
-  // Filter events
-  const filteredEvents = events.filter(event => {
-    const categoryMatch = selectedCategory === 'all' || event.category === selectedCategory;
-    const statusMatch = selectedStatus === 'all' || event.status === selectedStatus;
-    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         event.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return categoryMatch && statusMatch && matchesSearch;
-  });
+  // Updated getEventStatus function
+  const getEventStatus = (event) => {
+    const now = new Date().getTime();
+    const eventDate = new Date(`${event.date} ${event.startTime}`).getTime();
+    const eventEndDate = new Date(`${event.date} ${event.endTime}`).getTime();
+
+    if (now > eventEndDate) {
+      return 'ended';
+    } else if (now >= eventDate && now <= eventEndDate) {
+      return 'live';
+    } else {
+      return 'upcoming';
+    }
+  };
+
+  // Binary Search Implementation
+  const binarySearchEvents = (sortedEvents, query) => {
+    const results = [];
+    const searchLower = query.toLowerCase();
+    
+    for (let event of sortedEvents) {
+      if (event.title.toLowerCase().includes(searchLower)) {
+        results.push(event);
+      }
+    }
+    
+    return results;
+  };
+
+  // Merge Sort Implementation
+  const mergeSort = (arr, criteria) => {
+    if (arr.length <= 1) return arr;
+
+    const mid = Math.floor(arr.length / 2);
+    const left = arr.slice(0, mid);
+    const right = arr.slice(mid);
+
+    return merge(
+      mergeSort(left, criteria),
+      mergeSort(right, criteria),
+      criteria
+    );
+  };
+
+  const merge = (left, right, criteria) => {
+    const result = [];
+    let leftIndex = 0;
+    let rightIndex = 0;
+
+    while (leftIndex < left.length && rightIndex < right.length) {
+      if (compareEvents(left[leftIndex], right[rightIndex], criteria) <= 0) {
+        result.push(left[leftIndex]);
+        leftIndex++;
+      } else {
+        result.push(right[rightIndex]);
+        rightIndex++;
+      }
+    }
+
+    return result.concat(left.slice(leftIndex)).concat(right.slice(rightIndex));
+  };
+
+  const compareEvents = (a, b, criteria) => {
+    switch (criteria) {
+      case 'date':
+        return new Date(a.date) - new Date(b.date);
+      case 'title':
+        return a.title.localeCompare(b.title);
+      default:
+        return 0;
+    }
+  };
+
+  // Use useMemo to prevent unnecessary recalculations
+  const filteredEvents = useMemo(() => {
+    let filtered = [...events];
+
+    // Apply category filter
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(event => event.category === selectedCategory);
+    }
+
+    // Apply search using binary search if there's a search query
+    if (searchQuery) {
+      filtered = binarySearchEvents(filtered, searchQuery);
+    }
+
+    // Sort the filtered results by date using merge sort
+    return mergeSort(filtered, 'date');
+  }, [events, selectedCategory, searchQuery]);
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleCategoryChange = (e) => {
+    setSelectedCategory(e.target.value);
+  };
 
   // Format date function
   const formatDate = (dateString) => {
@@ -324,52 +396,25 @@ const Dashboard = () => {
 
         {/* Search and Filter Section */}
         <section className="search-filter-section">
-          <div className="search-bar">
-            <i className="fas fa-search"></i>
+          <div className="search-filter-container">
             <input
               type="text"
               placeholder="Search events..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
+              className="search-input"
             />
-          </div>
-
-          <div className="filters-container">
-            <div className="filter-group">
-              <h3>Categories</h3>
-              <div className="filter-buttons">
-                {categories.map(category => (
-                  <motion.button
-                    key={category.id}
-                    className={`filter-btn ${selectedCategory === category.id ? 'active' : ''}`}
-                    onClick={() => setSelectedCategory(category.id)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <i className={`fas ${category.icon}`}></i>
-                    {category.name}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-
-            <div className="filter-group">
-              <h3>Status</h3>
-              <div className="filter-buttons">
-                {statusFilters.map(status => (
-                  <motion.button
-                    key={status.id}
-                    className={`filter-btn ${selectedStatus === status.id ? 'active' : ''}`}
-                    onClick={() => setSelectedStatus(status.id)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <i className={`fas ${status.icon}`}></i>
-                    {status.name}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
+            <select
+              value={selectedCategory}
+              onChange={handleCategoryChange}
+              className="filter-select"
+            >
+              <option value="all">All Categories</option>
+              <option value="academic">Academic</option>
+              <option value="cultural">Cultural</option>
+              <option value="sports">Sports</option>
+              <option value="technical">Technical</option>
+            </select>
           </div>
         </section>
 

@@ -4,15 +4,92 @@ import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/fire
 import { useNavigate } from 'react-router-dom';
 import './MyEvents.css';
 
+// Queue Implementation for Event Updates
+class UpdateQueue {
+  constructor() {
+    this.items = [];
+  }
+
+  enqueue(event) {
+    this.items.push(event);
+  }
+
+  dequeue() {
+    if(this.isEmpty()) return null;
+    return this.items.shift();
+  }
+
+  isEmpty() {
+    return this.items.length === 0;
+  }
+
+  size() {
+    return this.items.length;
+  }
+
+  peek() {
+    if(this.isEmpty()) return null;
+    return this.items[0];
+  }
+}
+
+// Hash Table Implementation for Quick Event Lookup
+class EventHashTable {
+  constructor() {
+    this.table = {};
+    this.size = 0;
+  }
+
+  // Hash Function
+  hash(eventId) {
+    let hash = 0;
+    for (let i = 0; i < eventId.length; i++) {
+      hash += eventId.charCodeAt(i);
+    }
+    return hash;
+  }
+
+  // Add or Update Event
+  set(event) {
+    const hash = this.hash(event.id);
+    this.table[hash] = event;
+    this.size++;
+  }
+
+  // Get Event
+  get(eventId) {
+    const hash = this.hash(eventId);
+    return this.table[hash];
+  }
+
+  // Remove Event
+  remove(eventId) {
+    const hash = this.hash(eventId);
+    delete this.table[hash];
+    this.size--;
+  }
+
+  // Clear Hash Table
+  clear() {
+    this.table = {};
+    this.size = 0;
+  }
+}
+
 const MyEvents = () => {
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showParticipantsModal, setShowParticipantsModal] = useState(false);
   const [editFormData, setEditFormData] = useState({});
+  const [updateQueue] = useState(new UpdateQueue());
+  const [eventHashTable] = useState(new EventHashTable());
   const navigate = useNavigate();
 
-  // Define fetchMyEvents before using it in useEffect
+  useEffect(() => {
+    fetchMyEvents();
+  }, []);
+
   const fetchMyEvents = async () => {
     try {
       const eventsRef = collection(db, 'events');
@@ -22,36 +99,63 @@ const MyEvents = () => {
         id: doc.id,
         ...doc.data()
       }));
+      
+      // Store events in hash table for quick lookup
+      eventsList.forEach(event => {
+        eventHashTable.set(event);
+      });
+      
       setEvents(eventsList);
     } catch (error) {
       console.error('Error fetching events:', error);
     }
   };
 
-  useEffect(() => {
-    fetchMyEvents();
-  }, []);
-
   const handleEdit = (event) => {
-    setSelectedEvent(event);
-    setEditFormData(event);
-    setShowEditModal(true);
+    // Quick event lookup using hash table
+    const eventToEdit = eventHashTable.get(event.id);
+    if (eventToEdit) {
+      setSelectedEvent(eventToEdit);
+      setEditFormData(eventToEdit);
+      setShowEditModal(true);
+    }
   };
 
-  const handleViewParticipants = (event) => {
-    setSelectedEvent(event);
-    setShowParticipantsModal(true);
+  const processUpdateQueue = async () => {
+    while (!updateQueue.isEmpty()) {
+      const eventToUpdate = updateQueue.dequeue();
+      try {
+        const eventRef = doc(db, 'events', eventToUpdate.id);
+        await updateDoc(eventRef, eventToUpdate);
+        // Update hash table after successful update
+        eventHashTable.set(eventToUpdate);
+      } catch (error) {
+        console.error('Error updating event:', error);
+        // Re-queue failed updates
+        updateQueue.enqueue(eventToUpdate);
+        break;
+      }
+    }
   };
 
   const handleUpdateEvent = async (e) => {
     e.preventDefault();
-    try {
-      const eventRef = doc(db, 'events', selectedEvent.id);
-      await updateDoc(eventRef, editFormData);
-      setShowEditModal(false);
-      fetchMyEvents(); // Refresh the events list
-    } catch (error) {
-      console.error('Error updating event:', error);
+    // Add update to queue
+    updateQueue.enqueue({ ...editFormData });
+    setShowEditModal(false);
+    
+    // Process updates
+    await processUpdateQueue();
+    // Refresh events list
+    fetchMyEvents();
+  };
+
+  const handleViewParticipants = (event) => {
+    // Quick event lookup using hash table
+    const eventToView = eventHashTable.get(event.id);
+    if (eventToView) {
+      setSelectedEvent(eventToView);
+      setShowParticipantsModal(true);
     }
   };
 
@@ -61,7 +165,12 @@ const MyEvents = () => {
         <button className="back-btn" onClick={() => navigate('/')}>
           <i className="fas fa-arrow-left"></i> Back to Home
         </button>
-        <h2 className="page-title">All Events</h2>
+        <h2 className="page-title">My Events</h2>
+        {updateQueue.size() > 0 && (
+          <div className="update-badge">
+            {updateQueue.size()} updates pending
+          </div>
+        )}
       </div>
 
       <div className="events-grid">
@@ -78,36 +187,43 @@ const MyEvents = () => {
 
             <div className="event-details">
               <div className="detail-item">
-                <i className="fas fa-calendar"></i>
-                <div className="detail-content">
-                  <span className="detail-label">Date</span>
-                  <span className="detail-value">{event.date}</span>
+                <div className="detail-row">
+                  <i className="fas fa-calendar"></i>
+                  <div className="detail-content">
+                    <span className="detail-value">{event.date}</span>
+                  </div>
                 </div>
               </div>
 
               <div className="detail-item">
-                <i className="fas fa-clock"></i>
-                <div className="detail-content">
-                  <span className="detail-label">Time</span>
-                  <span className="detail-value">
-                    {event.startTime} - {event.endTime}
-                  </span>
+                <div className="detail-row">
+                  <i className="fas fa-clock"></i>
+                  <div className="detail-content">
+                    <span className="detail-value">
+                      {event.startTime} - {event.endTime}
+                    </span>
+                  </div>
                 </div>
               </div>
 
               <div className="detail-item">
-                <i className="fas fa-map-marker-alt"></i>
-                <div className="detail-content">
-                  <span className="detail-label">Venue</span>
-                  <span className="detail-value">{event.venue}</span>
+                <div className="detail-row">
+                  <i className="fas fa-map-marker-alt"></i>
+                  <div className="detail-content">
+                    <span className="detail-value">{event.venue}</span>
+                  </div>
                 </div>
               </div>
 
               <div className="detail-item">
-                <i className="fas fa-hourglass-half"></i>
-                <div className="detail-content">
-                  <span className="detail-label">Duration</span>
-                  <span className="detail-value">{event.duration}</span>
+                <div className="detail-row">
+                  <i className="fas fa-users"></i>
+                  <div className="detail-content">
+                    <span className={`detail-value ${event.participants?.length >= event.capacity ? 'full' : ''}`}>
+                      {event.participants?.length || 0}/{event.capacity}
+                      {event.participants?.length >= event.capacity && <span className="status-full"> (Full)</span>}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

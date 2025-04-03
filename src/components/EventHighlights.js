@@ -1,121 +1,192 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { db } from '../config';
+import { collection, getDocs, updateDoc, doc, arrayUnion, Timestamp } from 'firebase/firestore';
+import './EventHighlights.css';
 
 const EventHighlights = () => {
-  const [events, setEvents] = useState([]);
+  const [completedEvents, setCompletedEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
   useEffect(() => {
-    // Load events from localStorage
-    const storedEvents = JSON.parse(localStorage.getItem('events') || '[]');
-    // Add highlights array to each event if it doesn't exist
-    const eventsWithHighlights = storedEvents.map(event => ({
-      ...event,
-      highlights: event.highlights || []
-    }));
-    setEvents(eventsWithHighlights);
+    const fetchCompletedEvents = async () => {
+      try {
+        const eventsRef = collection(db, 'events');
+        const querySnapshot = await getDocs(eventsRef);
+        const currentDate = new Date();
+        
+        const currentDateStr = currentDate.toISOString().split('T')[0];
+        const currentTimeStr = currentDate.toLocaleTimeString('en-US', { 
+          hour12: false, 
+          hour: '2-digit', 
+          minute: '2-digit'
+        });
+
+        const events = querySnapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            links: doc.data().links || [] // Initialize empty array if no links exist
+          }))
+          .filter(event => {
+            return event.date < currentDateStr || 
+                   (event.date === currentDateStr && event.endTime < currentTimeStr);
+          });
+
+        setCompletedEvents(events);
+      } catch (err) {
+        console.error('Error fetching events:', err);
+        setError('Failed to fetch completed events: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCompletedEvents();
   }, []);
 
-  const handleHighlightUpload = (eventId) => (e) => {
-    const files = Array.from(e.target.files);
-    const updatedEvents = [...events];
-    const eventIndex = updatedEvents.findIndex(event => event.id === eventId);
+  const handleAddLink = async (eventId) => {
+    try {
+      const url = prompt('Enter the link URL:');
+      if (!url) return;
 
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const newHighlight = {
-          id: Date.now(),
-          image: reader.result,
-          uploadedAt: new Date().toISOString()
-        };
+      const description = prompt('Enter a description for this link:');
+      if (!description) return;
 
-        updatedEvents[eventIndex].highlights = [
-          ...(updatedEvents[eventIndex].highlights || []),
-          newHighlight
-        ];
-        setEvents(updatedEvents);
-        localStorage.setItem('events', JSON.stringify(updatedEvents));
+      const newLink = {
+        url,
+        description,
+        addedAt: new Date().toISOString(), // Store as ISO string
+        type: 'drive'
       };
-      reader.readAsDataURL(file);
-    });
+
+      const eventRef = doc(db, 'events', eventId);
+      await updateDoc(eventRef, {
+        links: arrayUnion(newLink)
+      });
+
+      // Update local state
+      setCompletedEvents(prevEvents =>
+        prevEvents.map(event =>
+          event.id === eventId
+            ? { ...event, links: [...(event.links || []), newLink] }
+            : event
+        )
+      );
+
+      alert('Link added successfully!');
+    } catch (err) {
+      console.error('Error adding link:', err);
+      alert('Failed to add link: ' + err.message);
+    }
   };
 
+  const handleCardClick = (event) => {
+    setSelectedEvent(event);
+  };
+
+  const closePopup = () => {
+    setSelectedEvent(null);
+  };
+
+  if (loading) return <div className="loading">Loading events...</div>;
+  if (error) return <div className="error">{error}</div>;
+  if (completedEvents.length === 0) return <div className="no-events">No completed events found</div>;
+
   return (
-    <div className="highlights-page">
-      <div className="highlights-header">
-        <h1>Event Highlights</h1>
-        <p>Browse and upload photos from our amazing events</p>
+    <div className="highlights-container">
+      <h2>Event Highlights</h2>
+      <div className="events-grid">
+        {completedEvents.map(event => (
+          <div 
+            key={event.id} 
+            className="highlight-card"
+            onClick={() => handleCardClick(event)}
+          >
+            <div className="event-header">
+              <div className="header-left">
+                <h3>{event.title}</h3>
+                <span className="category-tag">{event.category}</span>
+              </div>
+              <button
+                className="add-link-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddLink(event.id);
+                }}
+                title="Add New Link"
+              >
+                <i className="fas fa-plus"></i>
+              </button>
+            </div>
+            
+            <div className="event-details">
+              <p>
+                <i className="far fa-calendar"></i>
+                <strong>Date:</strong> {new Date(event.date).toLocaleDateString()}
+              </p>
+              <p>
+                <i className="far fa-clock"></i>
+                <strong>Time:</strong> {event.startTime} - {event.endTime}
+              </p>
+              <p>
+                <i className="fas fa-map-marker-alt"></i>
+                <strong>Venue:</strong> {event.venue}
+              </p>
+              <p>
+                <i className="fas fa-users"></i>
+                <strong>Attendees:</strong> {event.attendees?.length || 0} / {event.capacity}
+              </p>
+            </div>
+          </div>
+        ))}
       </div>
 
-      <div className="events-highlights-grid">
-        {events.map((event) => (
-          <motion.div
-            key={event.id}
-            className="event-highlight-card"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="event-highlight-header">
-              <img 
-                src={event.bannerImage} 
-                alt={event.title}
-                className="event-banner"
-              />
-              <div className="event-info">
-                <h2>{event.title}</h2>
-                <p>
-                  <i className="far fa-calendar"></i>
-                  {new Date(event.date).toLocaleDateString()}
-                </p>
-              </div>
+      {/* Popup Modal */}
+      {selectedEvent && (
+        <div className="popup-overlay" onClick={closePopup}>
+          <div className="popup-content" onClick={e => e.stopPropagation()}>
+            <div className="popup-header">
+              <h3>{selectedEvent.title} - Links</h3>
+              <button className="close-btn" onClick={closePopup}>
+                <i className="fas fa-times"></i>
+              </button>
             </div>
-
-            <div className="highlights-container">
-              {event.highlights && event.highlights.length > 0 ? (
-                <div className="highlights-grid">
-                  {event.highlights.map((highlight) => (
-                    <motion.div
-                      key={highlight.id}
-                      className="highlight-item"
-                      whileHover={{ scale: 1.05 }}
-                    >
-                      <img src={highlight.image} alt="Event highlight" />
-                      <div className="highlight-overlay">
-                        <span>{new Date(highlight.uploadedAt).toLocaleDateString()}</span>
+            
+            <div className="popup-body">
+              {selectedEvent.links && selectedEvent.links.length > 0 ? (
+                <div className="popup-links">
+                  {selectedEvent.links.map((link, index) => (
+                    <div key={index} className="popup-link-item">
+                      <div className="link-details">
+                        <span className="link-description">{link.description}</span>
+                        <span className="link-date">
+                          {new Date(link.addedAt).toLocaleDateString()}
+                        </span>
                       </div>
-                    </motion.div>
+                      <a 
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="popup-link-btn"
+                      >
+                        <i className="fas fa-external-link-alt"></i>
+                        Open Link
+                      </a>
+                    </div>
                   ))}
                 </div>
               ) : (
-                <div className="no-highlights">
-                  <i className="fas fa-images"></i>
-                  <p>No highlights yet</p>
+                <div className="no-links">
+                  <i className="fas fa-link-slash"></i>
+                  <p>No links available for this event</p>
                 </div>
               )}
             </div>
-
-            <div className="upload-section">
-              <button 
-                className="upload-highlights-btn"
-                onClick={() => document.getElementById(`highlight-upload-${event.id}`).click()}
-              >
-                <i className="fas fa-upload"></i>
-                Upload Highlights
-              </button>
-              <input
-                type="file"
-                id={`highlight-upload-${event.id}`}
-                hidden
-                multiple
-                accept="image/*"
-                onChange={handleHighlightUpload(event.id)}
-              />
-            </div>
-          </motion.div>
-        ))}
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

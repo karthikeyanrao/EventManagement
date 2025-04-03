@@ -149,8 +149,8 @@
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border: 1px solid #f1f5f9;
+  transition: all 0.3s ease;
+  border: 1px solid #E2E8F0;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -158,8 +158,9 @@
 }
 
 .event-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  border-color: #8B5CF6;
 }
 
 .event-image img {
@@ -179,6 +180,7 @@
   font-weight: 500;
   margin-bottom: 1rem;
   white-space: nowrap;
+  transition: all 0.3s ease;
 }
 
 .status-badge.Upcoming {
@@ -189,6 +191,10 @@
 .status-badge.Ended {
   background-color: #94a3b8;
   color: white;
+}
+
+.status-badge:hover {
+  transform: scale(1.05);
 }
 
 /* Event Title */
@@ -213,6 +219,11 @@
   color: #0284c7;
   margin-bottom: 1rem;
   white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.category-tag:hover {
+  transform: scale(1.05);
 }
 
 /* Event Details Section */
@@ -291,24 +302,27 @@
 
 /* Register Button */
 .register-btn {
-  padding: 0.5rem 1.5rem;
-  border: none;
-  border-radius: 20px;
-  background: #8B5CF6;
+  padding: 0.75rem 1.5rem;
+  background-color: #8B5CF6;
   color: white;
+  border: none;
+  border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
 }
 
 .register-btn:hover:not(:disabled) {
-  background: #7C3AED;
-  transform: translateY(-2px);
+  background-color: #7C3AED;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(139, 92, 246, 0.3);
 }
 
 .register-btn:disabled {
-  background: #ccc;
+  background-color: #E2E8F0;
   cursor: not-allowed;
+  color: #94A3B8;
 }
 
 /* Responsive Design */
@@ -418,4 +432,110 @@
 
 .cancel-btn:hover {
   background: #eee;
+}
+
+.search-filter-container {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.search-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  border-color: #8B5CF6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+  outline: none;
+}
+
+.filter-select {
+  padding: 0.75rem;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background-color: white;
+  font-size: 0.875rem;
+  min-width: 150px;
+  transition: all 0.3s ease;
+}
+
+.filter-select:focus {
+  border-color: #8B5CF6;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+  outline: none;
+}
+
+.filter-select:hover {
+  border-color: #8B5CF6;
+}
+
+/* Different colors for category tags with hover effects */
+.category-tag.academic {
+  background-color: #E0F2FE;
+  color: #0284C7;
+}
+
+.category-tag.academic:hover {
+  background-color: #BAE6FD;
+}
+
+.category-tag.cultural {
+  background-color: #FCE7F3;
+  color: #DB2777;
+}
+
+.category-tag.cultural:hover {
+  background-color: #FBCFE8;
+}
+
+.category-tag.sports {
+  background-color: #DCFCE7;
+  color: #16A34A;
+}
+
+.category-tag.sports:hover {
+  background-color: #BBF7D0;
+}
+
+.category-tag.technical {
+  background-color: #F1F5F9;
+  color: #475569;
+}
+
+.category-tag.technical:hover {
+  background-color: #E2E8F0;
+}
+
+/* Status badge colors with hover effects */
+.status-badge.upcoming {
+  background-color: #8B5CF6;
+  color: white;
+}
+
+.status-badge.upcoming:hover {
+  background-color: #7C3AED;
+}
+
+.status-badge.ongoing {
+  background-color: #10B981;
+  color: white;
+}
+
+.status-badge.ongoing:hover {
+  background-color: #059669;
+}
+
+.status-badge.completed {
+  background-color: #6B7280;
+  color: white;
+}
+
+.status-badge.completed:hover {
+  background-color: #4B5563;
 }

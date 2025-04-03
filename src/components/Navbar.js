@@ -4,6 +4,7 @@ import { auth, db } from '../config';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import './Navbar.css';
+import EventHighlights from './EventHighlights';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -60,6 +61,10 @@ const Navbar = () => {
                 <span>Create Event</span>
               </Link>
             )}
+            <Link to="/highlights" className="highlights-btn">
+              <i className="fas fa-star"></i>
+              <span>Event Highlights</span>
+            </Link>
           </>
         )}
 

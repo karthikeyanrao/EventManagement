@@ -20,9 +20,9 @@
 
 .event-card {
   background: white;
-  border-radius: 20px;
+  border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   border: 1px solid #f1f5f9;
 }
@@ -81,37 +81,48 @@
 }
 
 .event-details {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .detail-item {
+  width: 100%;
+}
+
+.detail-row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.detail-item i {
+.detail-row i {
   color: #8B5CF6;
-  font-size: 1.25rem;
+  font-size: 1rem;
+  width: 16px;
+  text-align: center;
 }
 
 .detail-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.detail-label {
-  font-size: 0.875rem;
-  color: #64748b;
+  flex: 1;
 }
 
 .detail-value {
-  font-size: 1rem;
-  color: #1e293b;
+  color: #1E293B;
+  font-size: 0.875rem;
   font-weight: 500;
+}
+
+.detail-value.full {
+  color: #DC2626;
+  font-weight: 600;
+}
+
+.status-full {
+  color: #DC2626;
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
 }
 
 .event-actions {
@@ -336,4 +347,17 @@
 
 .close-btn:hover {
   background-color: #e2e8f0;
+}
+
+.update-badge {
+  background-color: #8B5CF6;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  margin-left: 1rem;
+}
+
+.detail-item .fas.fa-users {
+  color: #8B5CF6;
 }
