@@ -134,222 +134,149 @@ const CreateEvent = () => {
   return (
     <div className="create-event-container">
       <div className="create-event-header">
-        <h1>Create Your Event</h1>
-        <p>Let's make something amazing together</p>
+        <h2>Create New Event</h2>
       </div>
 
-      <div className="progress-bar">
-        <div className={`progress-step ${step >= 1 ? 'active' : ''}`}>
-          <div className="step-number">1</div>
-          <div className="step-label">
-            <span>Basic Details</span>
-            <small>Event information</small>
-          </div>
-        </div>
-        <div className={`progress-step ${step >= 2 ? 'active' : ''}`}>
-          <div className="step-number">2</div>
-          <div className="step-label">
-            <span>Date & Venue</span>
-            <small>When & where</small>
-          </div>
-        </div>
-        <div className={`progress-step ${step >= 3 ? 'active' : ''}`}>
-          <div className="step-number">3</div>
-          <div className="step-label">
-            <span>Additional Info</span>
-            <small>Final touches</small>
-          </div>
-        </div>
-      </div>
-
-      <div className="create-event-form">
-        {step === 1 && (
-          <div className="form-step">
-            <div className="form-group">
-              <label>Event Title</label>
-              <input
-                type="text"
-                name="title"
-                placeholder="Give your event a catchy title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Description</label>
-              <textarea
-                name="description"
-                placeholder="Tell people what your event is about"
-                value={formData.description}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Category</label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select a category</option>
-                <option value="academic">Academic</option>
-                <option value="cultural">Cultural</option>
-                <option value="sports">Sports</option>
-                <option value="technical">Technical</option>
-                <option value="workshop">Workshop</option>
-              </select>
-            </div>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div className="form-step">
-            <div className="form-row">
-              <div className="form-group">
-                <label>Date</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleChange}
-                  min={new Date().toISOString().split('T')[0]}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Start Time</label>
-                <input
-                  type="time"
-                  name="startTime"
-                  value={formData.startTime}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>End Time</label>
-                <input
-                  type="time"
-                  name="endTime"
-                  value={formData.endTime}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Venue</label>
-              <input
-                type="text"
-                name="venue"
-                placeholder="Enter event venue"
-                value={formData.venue}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Capacity</label>
-              <input
-                type="number"
-                name="capacity"
-                placeholder="Maximum number of attendees"
-                value={formData.capacity}
-                onChange={handleChange}
-                required
-                min="1"
-              />
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <div className="form-step">
-            <div className="form-group">
-              <label>Registration Deadline</label>
-              <input
-                type="datetime-local"
-                name="registrationDeadline"
-                value={formData.registrationDeadline}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Organizer Name</label>
-              <input
-                type="text"
-                name="organizer"
-                placeholder="Who's organizing this event?"
-                value={formData.organizer}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Contact Email</label>
-              <input
-                type="email"
-                name="contactEmail"
-                placeholder="Email for inquiries"
-                value={formData.contactEmail}
-                onChange={handleChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Event Banner Image URL</label>
-              <input
-                type="url"
-                name="imageUrl"
-                placeholder="Paste image URL here"
-                value={formData.imageUrl}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-        )}
-
-        <div className="form-navigation">
-          {step > 1 && (
-            <button type="button" className="btn-previous" onClick={handlePrevious}>
-              <i className="fas fa-arrow-left"></i>
-              Previous
-            </button>
-          )}
-          
-          {step < 3 ? (
-            <button type="button" className="btn-next" onClick={handleNext}>
-              Next
-              <i className="fas fa-arrow-right"></i>
-            </button>
-          ) : (
-            <button type="button" className="btn-submit" onClick={handleSubmit}>
-              Create Event
-              <i className="fas fa-check"></i>
-            </button>
-          )}
+      <form className="create-event-form" onSubmit={handleSubmit}>
+        {/* Event Title */}
+        <div className="input-group">
+          <label className="input-label">Event Title</label>
+          <input
+            type="text"
+            name="title"
+            className="input-field"
+            value={formData.title}
+            onChange={handleChange}
+            required
+          />
         </div>
 
-        {error && (
-          <div className="error-message">
-            <i className="fas fa-exclamation-circle"></i>
-            {error}
+        {/* Description */}
+        <div className="input-group">
+          <label className="input-label">Description</label>
+          <textarea
+            name="description"
+            className="input-field"
+            value={formData.description}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* Category */}
+        <div className="input-group">
+          <label className="input-label">Category</label>
+          <select
+            name="category"
+            className="input-field"
+            value={formData.category}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select Category</option>
+            <option value="academic">Academic</option>
+            <option value="cultural">Cultural</option>
+            <option value="sports">Sports</option>
+            <option value="technical">Technical</option>
+          </select>
+        </div>
+
+        {/* Date and Time */}
+        <div className="datetime-container">
+          <div className="input-group">
+            <label className="input-label">Date</label>
+            <input
+              type="date"
+              name="date"
+              className="input-field"
+              value={formData.date}
+              onChange={handleChange}
+              required
+            />
           </div>
-        )}
-      </div>
+
+          <div className="input-group">
+            <label className="input-label">Start Time</label>
+            <input
+              type="time"
+              name="startTime"
+              className="input-field"
+              value={formData.startTime}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="input-group">
+            <label className="input-label">End Time</label>
+            <input
+              type="time"
+              name="endTime"
+              className="input-field"
+              value={formData.endTime}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        </div>
+
+        {/* Venue */}
+        <div className="input-group">
+          <label className="input-label">Venue</label>
+          <input
+            type="text"
+            name="venue"
+            className="input-field"
+            value={formData.venue}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        {/* Capacity and Registration Deadline */}
+        <div className="capacity-deadline-container">
+          <div className="input-group">
+            <label className="input-label">Maximum Capacity</label>
+            <input
+              type="number"
+              name="capacity"
+              className="input-field"
+              value={formData.capacity}
+              onChange={handleChange}
+              min="1"
+              required
+            />
+          </div>
+
+          <div className="input-group">
+            <label className="input-label">Registration Deadline</label>
+            <input
+              type="datetime-local"
+              name="registrationDeadline"
+              className="input-field"
+              value={formData.registrationDeadline}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        </div>
+
+        {/* Image URL */}
+        <div className="input-group">
+          <label className="input-label">Event Image URL</label>
+          <input
+            type="url"
+            name="imageUrl"
+            className="input-field"
+            value={formData.imageUrl}
+            onChange={handleChange}
+          />
+        </div>
+
+        <button type="submit" className="submit-btn">
+          Create Event
+        </button>
+      </form>
     </div>
   );
 };

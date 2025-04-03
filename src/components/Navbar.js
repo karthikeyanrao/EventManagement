@@ -1,18 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { auth } from '../config';
+import { auth, db } from '../config';
 import { signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
 import './Navbar.css';
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
+    // Listen for auth state changes
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        setUser(user);
+        // Fetch user role from Firestore
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setUserRole(userDoc.data().role);
+          }
+        } catch (error) {
+          console.error('Error fetching user role:', error);
+        }
+      } else {
+        setUser(null);
+        setUserRole(null);
+      }
     });
+
     return () => unsubscribe();
   }, []);
 
@@ -21,82 +39,68 @@ const Navbar = () => {
       await signOut(auth);
       navigate('/login');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Error signing out:', error);
     }
   };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isProfileOpen && !event.target.closest('.profile-container')) {
-        setIsProfileOpen(false);
-      }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [isProfileOpen]);
-
   return (
     <nav className="navbar">
-      <div className="nav-left">
-        <Link to="/" className="nav-brand">
-          <i className="fas fa-calendar-alt"></i>
-          <span>EventHub</span>
+      <div className="navbar-brand">
+        <Link to="/" className="nav-logo">
+          Event Management
         </Link>
       </div>
 
       <div className="nav-right">
-        <Link to="/highlights" className="nav-btn btn-highlight">
-          <i className="fas fa-star"></i>
-          Event Highlights
-        </Link>
-        <Link to="/create-event" className="nav-btn btn-create">
-          <i className="fas fa-plus"></i>
-          Create Event
-        </Link>
-
-        {user ? (
-          <div className="profile-container">
-            <button 
-              className="profile-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsProfileOpen(!isProfileOpen);
-              }}
-            >
-              <i className="fas fa-user-circle"></i>
-              <span>{user.email}</span>
-              <i className={`fas fa-chevron-${isProfileOpen ? 'up' : 'down'}`}></i>
-            </button>
-
-            {isProfileOpen && (
-              <div className="profile-dropdown">
-                <div className="dropdown-header">
-                  <i className="fas fa-user"></i>
-                  <span>{user.email}</span>
-                </div>
-                <Link to="/profile" className="dropdown-item">
-                  <i className="fas fa-id-card"></i>
-                  <span>My Profile</span>
-                </Link>
-                <Link to="/my-events" className="dropdown-item">
-                  <i className="fas fa-calendar"></i>
-                  <span>My Events</span>
-                </Link>
-                <button onClick={handleLogout} className="dropdown-item logout-btn">
-                  <i className="fas fa-sign-out-alt"></i>
-                  <span>Logout</span>
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <Link to="/login" className="nav-btn btn-login">
-            <i className="fas fa-sign-in-alt"></i>
-            Login
+        {user && userRole && userRole !== 'student' && (
+          <Link to="/create-event" className="create-event-btn">
+            <i className="fas fa-plus"></i>
+            <span>Create Event</span>
           </Link>
         )}
+
+        <div className="nav-auth">
+          {user ? (
+            <div className="profile-menu">
+              <button 
+                className="profile-btn"
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+              >
+                <i className="fas fa-user-circle"></i>
+                <span>{user.email}</span>
+                <i className="fas fa-chevron-down"></i>
+              </button>
+              
+              {showProfileMenu && (
+                <div className="profile-dropdown">
+                  <div className="user-info">
+                    <span className="user-email">{user.email}</span>
+                    <span className="user-role">{userRole}</span>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <Link to="/my-events" className="dropdown-item">
+                    <i className="fas fa-calendar-alt"></i>
+                    My Events
+                  </Link>
+                  <Link to="/profile" className="dropdown-item">
+                    <i className="fas fa-user"></i>
+                    My Profile
+                  </Link>
+                  <div className="dropdown-divider"></div>
+                  <button onClick={handleLogout} className="dropdown-item logout-btn">
+                    <i className="fas fa-sign-out-alt"></i>
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="auth-buttons">
+              <Link to="/login" className="login-btn">Login</Link>
+              <Link to="/signup" className="signup-btn">Sign Up</Link>
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );

@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './components/EventDashboard';    
-import LiveEvents from './components/LiveEvents';
-import UpcomingEvents from './components/UpcomingEvents';
+
 import CreateEvent from './components/CreateEvent';
 import EventHighlights from './components/EventHighlights';
 import Login from './components/Login';
@@ -10,6 +9,9 @@ import Signup from './components/Signup';
 import { auth } from './config';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import Navbar from './components/Navbar';
+import Profile from './components/Profile';
+import MyEvents from './components/MyEvents';
+
 function App() {
   const [user, loading] = useAuthState(auth);
 
@@ -32,10 +34,11 @@ function App() {
         <Route path="/signup" element={!user ? <Signup /> : <Navigate to="/" />} />
         <Route path="/" element={user ? <Dashboard /> : <Navigate to="/login" />} />
         <Route path="/navbar" element={<Navbar />} />
-        <Route path="/live-events" element={<LiveEvents />} />
-        <Route path="/upcoming-events" element={<UpcomingEvents />} />
+        
         <Route path="/create-event" element={<CreateEvent />} />
         <Route path="/highlights" element={<EventHighlights />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/my-events" element={<MyEvents />} />
       </Routes>
     </Router>
   );

@@ -28,8 +28,9 @@ const RegistrationForm = ({ event, onClose, onSubmit }) => {
         <h3>Register for {event.title}</h3>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label>Name</label>
+            <label htmlFor="name">Name</label>
             <input
+              id="name"
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -37,8 +38,9 @@ const RegistrationForm = ({ event, onClose, onSubmit }) => {
             />
           </div>
           <div className="form-group">
-            <label>Roll Number</label>
+            <label htmlFor="rollNo">Roll Number</label>
             <input
+              id="rollNo"
               type="text"
               value={formData.rollNo}
               onChange={(e) => setFormData({...formData, rollNo: e.target.value})}
@@ -46,8 +48,9 @@ const RegistrationForm = ({ event, onClose, onSubmit }) => {
             />
           </div>
           <div className="form-group">
-            <label>Department</label>
+            <label htmlFor="department">Department</label>
             <select
+              id="department"
               value={formData.department}
               onChange={(e) => setFormData({...formData, department: e.target.value})}
               required
@@ -61,8 +64,9 @@ const RegistrationForm = ({ event, onClose, onSubmit }) => {
             </select>
           </div>
           <div className="form-group">
-            <label>Year</label>
+            <label htmlFor="year">Year</label>
             <select
+              id="year"
               value={formData.year}
               onChange={(e) => setFormData({...formData, year: e.target.value})}
               required
@@ -112,48 +116,8 @@ const Dashboard = () => {
     { id: 'ended', name: 'Ended', icon: 'fa-check-circle' }
   ];
 
-  const featuredEvents = [
-    {
-      id: 1,
-      title: "Tech Innovation Summit 2024",
-      date: "Mar 15",
-      time: "10:00 AM",
-      venue: "Main Auditorium",
-      category: "Technical",
-      image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800",
-      attendees: 234,
-      isLive: true
-    },
-    {
-      id: 2,
-      title: "Cultural Night Fest",
-      date: "Mar 20",
-      time: "6:00 PM",
-      venue: "Open Air Theatre",
-      category: "Cultural",
-      image: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800",
-      attendees: 456,
-      isLive: false
-    },
-    {
-      id: 3,
-      title: "Sports Tournament Finals",
-      date: "Mar 25",
-      time: "2:00 PM",
-      venue: "Sports Complex",
-      category: "Sports",
-      image: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800",
-      attendees: 189,
-      isLive: false
-    }
-  ];
 
-  const quickStats = [
-    { label: 'Total Events', value: '120+', icon: 'fa-calendar-check', color: '#7C4DFF' },
-    { label: 'Active Users', value: '1.2K', icon: 'fa-users', color: '#FF4081' },
-    { label: 'Live Now', value: '8', icon: 'fa-broadcast-tower', color: '#00BFA5' },
-    { label: 'This Month', value: '45', icon: 'fa-chart-line', color: '#FFA726' }
-  ];
+ 
 
   // Updated getEventStatus function
   const getEventStatus = (event) => {
@@ -435,7 +399,7 @@ const Dashboard = () => {
                   >
                     <div className="event-image">
                       <img 
-                        src={event.imageUrl || '/default-event-image.jpg'} 
+                        src={event.imageUrl} 
                         alt={event.title}
                         onError={(e) => {
                           e.target.src = '/default-event-image.jpg';
@@ -515,6 +479,7 @@ const Dashboard = () => {
                           <button 
                             className="register-btn"
                             onClick={() => {
+                              console.log('Register button clicked');
                               setSelectedEvent(event);
                               setShowRegistrationForm(true);
                             }}

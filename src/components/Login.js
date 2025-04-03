@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { auth } from '../config';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { motion } from 'framer-motion';
+import './Login.css';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -72,7 +73,7 @@ const Login = () => {
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
               <div className="input-icon">
-                <i className="fas fa-envelope"></i>
+               
                 <input
                   type="email"
                   name="email"
@@ -86,7 +87,7 @@ const Login = () => {
 
             <div className="form-group">
               <div className="input-icon">
-                <i className="fas fa-lock"></i>
+               
                 <input
                   type="password"
                   name="password"
@@ -99,29 +100,12 @@ const Login = () => {
             </div>
 
             <div className="auth-buttons">
-              <motion.button
-                type="submit"
-                className="login-btn"
-                disabled={loading}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {loading ? (
-                  <i className="fas fa-spinner fa-spin"></i>
-                ) : (
-                  'Login'
-                )}
-              </motion.button>
-
-              <motion.button
-                type="button"
-                className="signup-btn"
-                onClick={() => navigate('/signup')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
+              <button type="submit" className="login-btn">
+                Login
+              </button>
+              <Link to="/signup" className="create-account-btn">
                 Create Account
-              </motion.button>
+              </Link>
             </div>
           </form>
         </motion.div>

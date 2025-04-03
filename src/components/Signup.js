@@ -5,6 +5,9 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 
+import { Link } from 'react-router-dom';
+import './Signup.css';
+
 console.log('Auth initialized:', auth);
 console.log('DB initialized:', db);
 
@@ -82,133 +85,94 @@ const Signup = () => {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-container">
-        <motion.div 
-          className="auth-box"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="auth-header">
-            <h1>Create Account</h1>
-            <p>Join EventHub to start managing events</p>
+    <div className="signup-container">
+      <div className="signup-form-container">
+        <div className="signup-header">
+          <h2>Create Account</h2>
+          <p>Join EventHub to start managing events</p>
+        </div>
+
+        {error && (
+          <div className="signup-error">
+            <i className="fas fa-exclamation-circle"></i>
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="signup-form-group">
+            <input
+              type="text"
+              placeholder="Full Name"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleChange}
+              required
+            />
           </div>
 
-          {error && (
-            <motion.div 
-              className="error-alert"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+          <div className="signup-form-group">
+            <input
+              type="email"
+              placeholder="Email address"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="signup-form-group">
+            <input
+              type="password"
+              placeholder="Password (min. 6 characters)"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              minLength="6"
+            />
+          </div>
+
+          <div className="signup-form-group">
+            <input
+              type="password"
+              placeholder="Confirm Password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="signup-form-group">
+            <select
+              className="signup-role-select"
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              required
             >
-              <i className="fas fa-exclamation-circle"></i>
-              {error}
-            </motion.div>
-          )}
+              <option value="">Select Role</option>
+              <option value="student">Student</option>
+              <option value="faculty">Faculty</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
 
-          <form onSubmit={handleSubmit} className="auth-form">
-            <div className="form-group">
-              <div className="input-icon">
-                <i className="fas fa-user"></i>
-                <input
-                  type="text"
-                  name="fullName"
-                  placeholder="Full Name"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required
-                  minLength="2"
-                  maxLength="50"
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <div className="input-icon">
-                <i className="fas fa-envelope"></i>
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Email address"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <div className="input-icon">
-                <i className="fas fa-lock"></i>
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Password (min. 6 characters)"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  minLength="6"
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <div className="input-icon">
-                <i className="fas fa-lock"></i>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  placeholder="Confirm Password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  minLength="6"
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <select
-                value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="input-field"
-                required
-              >
-                <option value="student">Student</option>
-                <option value="faculty">Faculty</option>
-              </select>
-            </div>
-
-            <div className="auth-buttons">
-              <motion.button
-                type="submit"
-                className="login-btn"
-                disabled={loading}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {loading ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin"></i>
-                    Creating Account...
-                  </>
-                ) : (
-                  'Create Account'
-                )}
-              </motion.button>
-
-              <motion.button
-                type="button"
-                className="signup-btn"
-                onClick={() => navigate('/login')}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Already have an account? Login
-              </motion.button>
-            </div>
-          </form>
-        </motion.div>
+          <div className="signup-buttons">
+            <button 
+              type="submit" 
+              className={`signup-submit-btn ${loading ? 'signup-loading' : ''}`}
+              disabled={loading}
+            >
+              Create Account
+            </button>
+            <Link to="/login" className="signup-login-link">
+              Already have an account? Login
+            </Link>
+          </div>
+        </form>
       </div>
     </div>
   );
