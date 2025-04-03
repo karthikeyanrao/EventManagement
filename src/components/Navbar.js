@@ -82,10 +82,18 @@ const Navbar = () => {
                     <span className="user-role">{userRole}</span>
                   </div>
                   <div className="dropdown-divider"></div>
-                  <Link to="/my-events" className="dropdown-item">
-                    <i className="fas fa-calendar-alt"></i>
-                    My Events
-                  </Link>
+                  {user && userRole && (
+          <>
+            {userRole === 'faculty' && (
+                <Link to="/my-events" className="dropdown-item">
+                <i className="fas fa-calendar-alt"></i>
+                My Events
+              </Link>
+            )}
+          </>
+        )}
+                
+
                   <Link to="/profile" className="dropdown-item">
                     <i className="fas fa-user"></i>
                     My Profile
