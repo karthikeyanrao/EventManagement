@@ -107,9 +107,7 @@ const EventHighlights = () => {
             <div className="event-header">
               <div className="header-left">
                 <h3>{event.title}</h3>
-                <span className="category-tag">{event.category}</span>
-              </div>
-              <button
+                <button
                 className="add-link-btn"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -119,6 +117,9 @@ const EventHighlights = () => {
               >
                 <i className="fas fa-plus"></i>
               </button>
+                <span className="category-tag">{event.category}</span>
+              </div>
+             
             </div>
             
             <div className="event-details">

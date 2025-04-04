@@ -88,7 +88,7 @@ const RegistrationForm = ({ event, onClose, onSubmit }) => {
   );
 };
 
-const Dashboard = () => {
+const EventDashboard = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -99,6 +99,7 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('upcoming');
 
   const categories = [
     { id: 'all', name: 'All Events', icon: 'fa-calendar-alt' },
@@ -142,26 +143,7 @@ const Dashboard = () => {
     fetchEvents();
   }, []);
 
-  const handleHighlightUpload = (e) => {
-    const files = Array.from(e.target.files);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const newHighlight = {
-          id: Date.now(),
-          image: reader.result,
-          uploadedAt: new Date().toISOString()
-        };
-        
-        setHighlights(prevHighlights => {
-          const updatedHighlights = [...prevHighlights, newHighlight];
-          localStorage.setItem('eventHighlights', JSON.stringify(updatedHighlights));
-          return updatedHighlights;
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-  };
+
 
   // Updated getEventStatus function
   const getEventStatus = (event) => {
@@ -340,10 +322,44 @@ const Dashboard = () => {
     return new Date(deadline) < new Date();
   };
 
+  // Filter events based on status
+  const getFilteredEvents = () => {
+    const currentDate = new Date();
+    const currentDateStr = currentDate.toISOString().split('T')[0];
+    const currentTimeStr = currentDate.toLocaleTimeString('en-US', { 
+      hour12: false, 
+      hour: '2-digit', 
+      minute: '2-digit'
+    });
+
+    return events.filter(event => {
+      const eventDate = event.date;
+      const eventStartTime = event.startTime;
+      const eventEndTime = event.endTime;
+
+      if (filterStatus === 'live') {
+        return eventDate === currentDateStr && 
+               eventStartTime <= currentTimeStr && 
+               eventEndTime >= currentTimeStr;
+      } else if (filterStatus === 'upcoming') {
+        return eventDate > currentDateStr || 
+               (eventDate === currentDateStr && eventStartTime > currentTimeStr);
+      } else if (filterStatus === 'ended') {
+        return eventDate < currentDateStr || 
+               (eventDate === currentDateStr && eventEndTime < currentTimeStr);
+      }
+      return true;
+    });
+  };
+
   return (
     <div className="dashboard-wrapper">
       <Navbar />
       <div className="dashboard-container">
+        <div className="dashboard-header">
+          <h1>Events Dashboard</h1>
+          </div>
+
         <div className="hero-section">
           <div className="hero-content">
             <h1>Discover Amazing College Events</h1>
@@ -391,7 +407,37 @@ const Dashboard = () => {
 
         {/* Top Navigation Actions */}
         <div className="dashboard-actions">
-         
+        <div className="filter-buttons">
+            <button 
+                className={`filter-btn ${filterStatus === 'all' ? 'active' : ''}`}
+                onClick={() => setFilterStatus('all')}
+            >
+                <i className="fas fa-th-large"></i>
+                All Events
+            </button>
+            <button 
+                className={`filter-btn ${filterStatus === 'live' ? 'active' : ''}`}
+                onClick={() => setFilterStatus('live')}
+            >
+                <i className="fas fa-circle live-icon"></i>
+                Live Events
+            </button>
+            <button 
+                className={`filter-btn ${filterStatus === 'upcoming' ? 'active' : ''}`}
+                onClick={() => setFilterStatus('upcoming')}
+            >
+                <i className="fas fa-calendar-alt"></i>
+                Upcoming
+            </button>
+            <button 
+                className={`filter-btn ${filterStatus === 'ended' ? 'active' : ''}`}
+                onClick={() => setFilterStatus('ended')}
+            >
+                <i className="fas fa-check-circle"></i>
+                Ended
+            </button>
+        </div>
+        
         </div>
 
         {/* Search and Filter Section */}
@@ -432,8 +478,8 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="events-grid">
-              {filteredEvents.length > 0 ? (
-                filteredEvents.map((event, index) => (
+              {getFilteredEvents().length > 0 ? (
+                getFilteredEvents().map((event, index) => (
                   <motion.div
                     key={event.id}
                     className={`event-card ${event.status}`}
@@ -457,7 +503,8 @@ const Dashboard = () => {
                     </div>
                     <div className="event-content">
                       <div className="event-header">
-                        <h3>{event.title}</h3>
+                        <h3 className="event-title">{event.title}</h3>
+                        <p className="event-description">{event.description}</p>
                         <span className={`category-tag ${event.category}`}>
                           {event.category}
                         </span>
@@ -566,4 +613,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard; 
+export default EventDashboard; 
