@@ -44,7 +44,7 @@
   align-items: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
-  padding: 20px;
+  padding: 10px;
 }
 
 .auth-form-container {
@@ -67,7 +67,7 @@
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  
 }
 
 .form-group {
